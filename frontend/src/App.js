@@ -36,7 +36,7 @@ function App() {
     setPrivateMessages({});
     setUnreadDMs({});
     localStorage.removeItem('chatUsername');
-  }, []);
+  }, [username]);
 
   useEffect(() => {
     const storedUsername = localStorage.getItem('chatUsername');
