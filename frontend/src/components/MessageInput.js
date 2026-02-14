@@ -1,21 +1,20 @@
 import React, { useState } from 'react';
+import config from '../config';
 
-const MessageInput = ({ onSendMessage }) => {
+const MessageInput = ({ onSendMessage, placeholder }) => {
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!message.trim() || isSending) return;
 
     setIsSending(true);
     try {
       await onSendMessage(message.trim());
       setMessage('');
-    } catch (error) {
-      console.error('Error sending message:', error);
-      // You could add error handling UI here
+    } catch {
+      // Error feedback is handled at the App level
     } finally {
       setIsSending(false);
     }
@@ -28,23 +27,20 @@ const MessageInput = ({ onSendMessage }) => {
     }
   };
 
-  const handleChange = (e) => {
-    if (e.target.value.length <= 500) { // Character limit
-      setMessage(e.target.value);
-    }
-  };
-
   return (
     <div className="message-input">
       <form onSubmit={handleSubmit} className="message-input-form">
         <input
           type="text"
           value={message}
-          onChange={handleChange}
+          onChange={(e) =>
+            e.target.value.length <= config.maxMessageLength &&
+            setMessage(e.target.value)
+          }
           onKeyPress={handleKeyPress}
-          placeholder="Type your message..."
+          placeholder={placeholder || 'Type a message…'}
           disabled={isSending}
-          maxLength={500}
+          maxLength={config.maxMessageLength}
           autoComplete="off"
         />
         <button
@@ -52,11 +48,11 @@ const MessageInput = ({ onSendMessage }) => {
           className="send-button"
           disabled={!message.trim() || isSending}
         >
-          {isSending ? '⏳' : 'Send'}
+          {isSending ? '⏳' : '➤'}
         </button>
       </form>
       <div className="character-count">
-        {message.length}/500
+        {message.length}/{config.maxMessageLength}
       </div>
     </div>
   );

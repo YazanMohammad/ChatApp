@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\yazan\\Desktop\\ChatApp\\Backend\\ChatApp.API\\ChatApp.API.csproj": {}
+    "C:\\Users\\yazan\\Documents\\GitHub\\ChatApp\\Backend\\ChatApp.API\\ChatApp.API.csproj": {}
   },
   "projects": {
-    "C:\\Users\\yazan\\Desktop\\ChatApp\\Backend\\ChatApp.API\\ChatApp.API.csproj": {
+    "C:\\Users\\yazan\\Documents\\GitHub\\ChatApp\\Backend\\ChatApp.API\\ChatApp.API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\yazan\\Desktop\\ChatApp\\Backend\\ChatApp.API\\ChatApp.API.csproj",
+        "projectUniqueName": "C:\\Users\\yazan\\Documents\\GitHub\\ChatApp\\Backend\\ChatApp.API\\ChatApp.API.csproj",
         "projectName": "ChatApp.API",
-        "projectPath": "C:\\Users\\yazan\\Desktop\\ChatApp\\Backend\\ChatApp.API\\ChatApp.API.csproj",
+        "projectPath": "C:\\Users\\yazan\\Documents\\GitHub\\ChatApp\\Backend\\ChatApp.API\\ChatApp.API.csproj",
         "packagesPath": "C:\\Users\\yazan\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\yazan\\Desktop\\ChatApp\\Backend\\ChatApp.API\\obj\\",
+        "outputPath": "C:\\Users\\yazan\\Documents\\GitHub\\ChatApp\\Backend\\ChatApp.API\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -26,7 +26,6 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -45,7 +44,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net9.0": {
@@ -91,7 +90,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.102/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

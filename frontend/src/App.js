@@ -13,135 +13,178 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [connectedUsers, setConnectedUsers] = useState([]);
 
+  // Private messaging state
+  const [activeChat, setActiveChat] = useState(null); // null = general, string = DM user
+  const [privateMessages, setPrivateMessages] = useState({}); // { username: ChatMessage[] }
+  const [unreadDMs, setUnreadDMs] = useState({}); // { username: number }
+
   const handleDisconnect = useCallback(async () => {
-    console.log('handleDisconnect called');
-    const currentUsername = username; // Capture current username
-    if (currentUsername) {
-      console.log('Leaving chat for user:', currentUsername);
-      await signalRService.leaveChat(currentUsername);
+    if (username) {
+      await signalRService.leaveChat(username);
     }
-    console.log('Stopping SignalR connection...');
     await signalRService.stopConnection();
-    console.log('Removing all listeners...');
-    signalRService.removeAllListeners(); // Clear all event listeners
-    console.log('Resetting state...');
+    signalRService.removeAllListeners();
     setIsConnected(false);
     setUsername('');
     setMessages([]);
     setConnectedUsers([]);
+    setActiveChat(null);
+    setPrivateMessages({});
+    setUnreadDMs({});
     localStorage.removeItem('chatUsername');
-    console.log('Disconnect process completed');
-  }, []); // Remove username dependency to prevent recreation
+  }, []);
 
   useEffect(() => {
     const storedUsername = localStorage.getItem('chatUsername');
-    if (storedUsername) {
-      setUsername(storedUsername);
-    }
-
-    return () => {
-      handleDisconnect();
-    };
+    if (storedUsername) setUsername(storedUsername);
+    return () => { handleDisconnect(); };
   }, [handleDisconnect]);
+
+  const handleClearChat = useCallback(() => {
+    if (activeChat) {
+      // Clear DM with a specific user
+      setPrivateMessages((prev) => ({ ...prev, [activeChat]: [] }));
+    } else {
+      // Clear general chat
+      setMessages([]);
+    }
+  }, [activeChat]);
+
+  const handleSelectUser = useCallback((targetUser) => {
+    if (targetUser === null) {
+      setActiveChat(null);
+      return;
+    }
+    setActiveChat(targetUser);
+    // Clear unread badge for this user
+    setUnreadDMs((prev) => {
+      const next = { ...prev };
+      delete next[targetUser];
+      return next;
+    });
+    // Request DM history from server
+    signalRService.getPrivateHistory(targetUser);
+  }, []);
 
   const handleConnect = async (newUsername, password, isNewUser) => {
     if (!newUsername.trim() || !password.trim()) return;
 
-    console.log('Starting connection process...');
     setIsConnecting(true);
     setConnectionError('');
 
     try {
-      console.log('Connecting to SignalR...');
       await signalRService.startConnection();
-
-      // Clear any existing listeners first to prevent duplicates
       signalRService.removeAllListeners();
 
       signalRService.onReceiveMessage((message) => {
-        console.log('Received message:', message);
-        setMessages(prev => [...prev, { ...message, type: 'message' }]);
+        setMessages((prev) => [...prev, { ...message, type: 'message' }]);
       });
 
-      signalRService.onUserJoined((joinedUsername) => {
-        console.log('User joined:', joinedUsername);
-        setMessages(prev => [...prev, {
-          id: Date.now().toString(),
-          message: `${joinedUsername} joined the chat`,
-          timestamp: new Date().toISOString(),
-          type: 'system'
-        }]);
+      signalRService.onReceivePrivateMessage((message) => {
+        const lowerMe = newUsername.trim().toLowerCase();
+        const isSentByMe = message.username.toLowerCase() === lowerMe;
+        const otherUser = isSentByMe ? message.recipient : message.username;
+
+        setPrivateMessages((prev) => ({
+          ...prev,
+          [otherUser]: [...(prev[otherUser] || []), { ...message, type: 'private' }],
+        }));
+
+        // Only increment unread for messages FROM others, not messages we sent
+        if (!isSentByMe) {
+          setActiveChat((currentActive) => {
+            if (currentActive !== otherUser) {
+              setUnreadDMs((prevUnread) => ({
+                ...prevUnread,
+                [otherUser]: (prevUnread[otherUser] || 0) + 1,
+              }));
+            }
+            return currentActive;
+          });
+        }
       });
 
-      signalRService.onUserLeft((leftUsername) => {
-        console.log('User left:', leftUsername);
-        setMessages(prev => [...prev, {
-          id: Date.now().toString(),
-          message: `${leftUsername} left the chat`,
-          timestamp: new Date().toISOString(),
-          type: 'system'
-        }]);
+      signalRService.onPrivateHistory((history) => {
+        if (!history || history.length === 0) return;
+        const lowerMe = newUsername.trim().toLowerCase();
+        const first = history[0];
+        const otherUser =
+          first.username.toLowerCase() === lowerMe ? first.recipient : first.username;
+        setPrivateMessages((prev) => ({
+          ...prev,
+          [otherUser]: history.map((msg) => ({ ...msg, type: 'private' })),
+        }));
+      });
+
+      signalRService.onUserJoined((joinedUser) => {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            message: `${joinedUser} joined the chat`,
+            timestamp: new Date().toISOString(),
+            type: 'system',
+          },
+        ]);
+      });
+
+      signalRService.onUserLeft((leftUser) => {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            message: `${leftUser} left the chat`,
+            timestamp: new Date().toISOString(),
+            type: 'system',
+          },
+        ]);
       });
 
       signalRService.onUpdateUserList((users) => {
-        console.log('Updated user list:', users);
-        const usernames = users.map(u => u.username || u);
-        setConnectedUsers(usernames);
+        setConnectedUsers(users.map((u) => u.username || u));
       });
 
       signalRService.onChatHistory((history) => {
-        console.log('Chat history received:', history);
-        if (history && history.length > 0) {
-          setMessages(history.map(msg => ({ ...msg, type: 'message' })));
+        if (history?.length > 0) {
+          setMessages(history.map((msg) => ({ ...msg, type: 'message' })));
         }
       });
 
       signalRService.onError((errorMessage) => {
-        console.error('SignalR Error:', errorMessage);
         setConnectionError(errorMessage);
       });
 
-      console.log('Authenticating user...');
-      const authResult = await signalRService.authenticateAndJoin(newUsername.trim(), password.trim(), isNewUser);
+      const authResult = await signalRService.authenticateAndJoin(
+        newUsername.trim(),
+        password.trim(),
+        isNewUser
+      );
 
-      console.log('Auth result:', authResult);
       if (authResult.success) {
-        console.log('Authentication successful, setting connected state...');
-        setUsername(newUsername.trim());
+        // Use the server-returned username to ensure casing matches messages
+        const serverUsername = authResult.user?.username || newUsername.trim();
+        setUsername(serverUsername);
         setIsConnected(true);
-        localStorage.setItem('chatUsername', newUsername.trim());
-        console.log('Connection process completed successfully');
+        localStorage.setItem('chatUsername', serverUsername);
       } else {
         throw new Error(authResult.message);
       }
     } catch (error) {
-      console.error('Connection failed:', error);
-      if (error.retryAfterSeconds) {
-        throw error; // Pass the error with retry info to UserSetup
-      }
-      setConnectionError(error.message || 'Failed to connect to chat. Please try again.');
+      if (error.retryAfterSeconds) throw error;
+      setConnectionError(error.message || 'Failed to connect. Please try again.');
       throw error;
     } finally {
       setIsConnecting(false);
     }
   };
 
-  const handleUsernameChange = async (newUsername) => {
-    if (isConnected) {
-      await signalRService.leaveChat(username);
-      // Note: For security, we don't allow username changes after auth
-      // User would need to disconnect and reconnect with new credentials
-      setConnectionError('To change username, please disconnect and create a new account.');
-      return;
-    }
-    setUsername(newUsername.trim());
-    localStorage.setItem('chatUsername', newUsername.trim());
-  };
-
   return (
     <div className="App">
       <header className="App-header">
-        <h1>💬 Secure Real-Time Chat</h1>
+        <h1>
+          <span className="header-icon">💬</span>
+          SecureChat
+        </h1>
         <ConnectionStatus />
       </header>
 
@@ -158,15 +201,15 @@ function App() {
             username={username}
             messages={messages}
             connectedUsers={connectedUsers}
-            onUsernameChange={handleUsernameChange}
             onDisconnect={handleDisconnect}
+            activeChat={activeChat}
+            onSelectUser={handleSelectUser}
+            onClearChat={handleClearChat}
+            privateMessages={privateMessages}
+            unreadDMs={unreadDMs}
           />
         )}
       </main>
-
-      <footer className="App-footer">
-        <p>🛡️ Secure Chat with Brute Force Protection | Built with ASP.NET Core + SignalR & React</p>
-      </footer>
     </div>
   );
 }

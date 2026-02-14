@@ -1,13 +1,38 @@
 # 🔐 Secure Real-Time Chat Application
 
-A professional, secure real-time chat application built with **ASP.NET Core + SignalR** backend and **React** frontend, featuring comprehensive authentication and brute force protection.
+A professional, secure real-time chat application built with **ASP.NET Core + SignalR** backend and **React** frontend, featuring comprehensive authentication, brute force protection, and **private messaging**.
 
-![Chat App Demo](https://via.placeholder.com/800x400/667eea/ffffff?text=Secure+Real-Time+Chat+App)
+## 📸 Preview
+
+### Login Screen
+![Login Screen](Login%20Screen.png)
+
+### General Chat
+![Main Chat](Main%20Chat.png)
+
+### Private Messaging (DM)
+![DM](DM.png)
+
+### Feature Flow
+
+```mermaid
+graph LR
+    A[Login / Sign Up] --> B[General Chat]
+    B --> C{Click User}
+    C --> D[Private DM]
+    D --> E{Click General Chat}
+    E --> B
+    D -- "🔴 Unread Badge" --> B
+```
+
 
 ## 🚀 Features
 
 ### 🔥 **Core Chat Features**
 - ✅ **Real-time messaging** - Instant message delivery across all connected clients
+- ✅ **Private messaging** - Click any user to open an inline DM conversation
+- ✅ **Unread badges** - Notification counter on users with new DMs
+- ✅ **Clear chat** - One-click clear for both general and DM views
 - ✅ **User authentication** - Secure username + password system
 - ✅ **Online user list** - See who's currently connected
 - ✅ **Message history** - Previous messages loaded on join
@@ -31,19 +56,21 @@ A professional, secure real-time chat application built with **ASP.NET Core + Si
 - ✅ **User colors** - Consistent color assignment per user
 - ✅ **Timestamps** - Formatted message timing
 - ✅ **Error handling** - Graceful error recovery and user feedback
+- ✅ **Dark glassmorphism UI** - Modern premium theme with animations
 
 ## 🛠 **Tech Stack**
 
 ### **Backend**
-- **ASP.NET Core 8.0** - Web API framework
+- **ASP.NET Core 9.0** - Web API framework
 - **SignalR** - Real-time WebSocket communication
-- **C# 12** - Latest language features
+- **C# 13** - Latest language features
 - **In-Memory Storage** - No database complexity
+- **SOLID Architecture** - Interface-driven services and repositories via DI
 
 ### **Frontend**
 - **React 18** - Modern UI framework with hooks
 - **SignalR JavaScript Client** - Real-time communication
-- **Modern CSS** - Responsive design with animations
+- **Modern CSS** - Dark glassmorphism theme with animations
 - **ES6+** - Latest JavaScript features
 
 ### **Security**
@@ -52,9 +79,40 @@ A professional, secure real-time chat application built with **ASP.NET Core + Si
 - **Input Validation** - XSS and injection protection
 - **CORS Configuration** - Secure cross-origin requests
 
+## 🏗️ **Architecture**
+
+The backend follows **SOLID principles** with a clean separation of concerns:
+
+```
+Backend/ChatApp.API/
+├── Hubs/
+│   └── ChatHub.cs              # SignalR hub (depends on interfaces only)
+├── Models/
+│   ├── AuthRequest.cs
+│   ├── AuthResponse.cs
+│   ├── ChatMessage.cs
+│   ├── IPAttemptTracker.cs
+│   └── User.cs
+├── Repositories/
+│   ├── IUserRepository.cs          # User CRUD & online state
+│   ├── InMemoryUserRepository.cs
+│   ├── IMessageRepository.cs       # Message storage & retrieval
+│   └── InMemoryMessageRepository.cs
+├── Services/
+│   ├── IPasswordService.cs         # Hash, verify, strength validation
+│   ├── PasswordService.cs
+│   ├── IRateLimitService.cs        # IP tracking, brute-force protection
+│   ├── RateLimitService.cs
+│   ├── IAuthenticationService.cs   # Orchestrates auth flow
+│   └── AuthenticationService.cs
+└── Program.cs                      # DI registration & middleware
+```
+
+All services are registered as **singletons** via dependency injection in `Program.cs`.
+
 ## 📋 **Prerequisites**
 
-- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
 - [Node.js](https://nodejs.org/) (version 16.0 or later)
 - [Git](https://git-scm.com/) for version control
 - Modern web browser (Chrome 88+, Firefox 85+, Safari 14+, Edge 88+)
@@ -64,8 +122,8 @@ A professional, secure real-time chat application built with **ASP.NET Core + Si
 ### **1. Clone Repository**
 
 ```bash
-git clone https://github.com/yourusername/secure-chat-app.git
-cd secure-chat-app
+git clone https://github.com/YazanMohammad/ChatApp.git
+cd ChatApp
 ```
 
 ### **2. Backend Setup**
@@ -84,14 +142,14 @@ dotnet run
 ```
 
 The backend will be available at:
-- **HTTP**: `http://localhost:5000`
-- **HTTPS**: `https://localhost:5001`
+- **HTTP**: `http://localhost:5237`
+- **HTTPS**: `https://localhost:7115`
 - **SignalR Hub**: `/chathub`
 
 ### **3. Frontend Setup**
 
 ```bash
-cd Frontend
+cd frontend
 
 # Install dependencies
 npm install
@@ -100,6 +158,16 @@ npm install
 npm start
 ```
 
+> **Note (Node.js 24+):** If you're running Node.js 24 or later, start the dev server with:
+> ```bash
+> # PowerShell
+> $env:NODE_OPTIONS="--openssl-legacy-provider"; npm start
+>
+> # Bash
+> NODE_OPTIONS=--openssl-legacy-provider npm start
+> ```
+> This is needed because `react-scripts@4.0.3` uses an older webpack version incompatible with OpenSSL 3.x.
+
 The frontend will be available at:
 - **Development**: `http://localhost:3000`
 
@@ -107,7 +175,7 @@ The frontend will be available at:
 
 ### **Getting Started**
 1. **Start Backend**: Run `dotnet run` in the Backend directory
-2. **Start Frontend**: Run `npm start` in the Frontend directory
+2. **Start Frontend**: Run `npm start` in the frontend directory
 3. **Open Browser**: Navigate to `http://localhost:3000`
 
 ### **Creating an Account**
@@ -165,7 +233,7 @@ The frontend will be available at:
 
 1. **Update Backend URL**
    ```bash
-   # Create .env file in Frontend/
+   # Create .env file in frontend/
    REACT_APP_BACKEND_URL=https://your-app.up.railway.app
    ```
 
@@ -174,9 +242,9 @@ The frontend will be available at:
    - Sign up with GitHub
    - Click "New site from Git"
    - Configure build settings:
-     - **Base directory**: `Frontend`
+     - **Base directory**: `frontend`
      - **Build command**: `npm run build`
-     - **Publish directory**: `Frontend/build`
+     - **Publish directory**: `frontend/build`
    - Add environment variable: `REACT_APP_BACKEND_URL`
    - Deploy!
 
@@ -191,21 +259,21 @@ The frontend will be available at:
 ```
 1. User enters username + password
 2. Frontend validates input format
-3. Backend checks rate limits (IP + user)
-4. Password strength validation (new users)
-5. Secure hash comparison (existing users)
-6. JWT-like session management
-7. SignalR connection authorization
+3. Backend checks IP rate limits (IRateLimitService)
+4. Password strength validation for new users (IPasswordService)
+5. Secure hash comparison for existing users (IPasswordService)
+6. SignalR connection authorized on success
+7. User set online and user list broadcast (IUserRepository)
 ```
 
 ### **Rate Limiting System**
 ```
-IP Level:
+IP Level (RateLimitService):
 - Track attempts per IP address
 - Max 10 attempts per 5 minutes
 - Automatic IP blocking
 
-User Level:
+User Level (AuthenticationService):
 - Track attempts per username
 - Max 5 attempts before lockout
 - 15-minute lockout period
@@ -276,12 +344,12 @@ await connection.invoke('LeaveChat', username);
 
 ### **Automated Testing**
 ```bash
-# Backend unit tests
+# Backend build verification
 cd Backend/ChatApp.API
-dotnet test
+dotnet build
 
 # Frontend component tests
-cd Frontend
+cd frontend
 npm test
 ```
 
@@ -289,13 +357,17 @@ npm test
 
 ### **Backend Configuration**
 
-#### **Security Settings** (ChatService.cs)
-```csharp
-private const int MAX_FAILED_ATTEMPTS = 5;      // Account lockout threshold
-private const int LOCKOUT_MINUTES = 15;         // Lockout duration
-private const int IP_RATE_LIMIT_ATTEMPTS = 10;  // IP rate limit
-private const int IP_RATE_LIMIT_MINUTES = 5;    // IP rate limit window
-```
+#### **Security Settings**
+
+Settings are distributed across focused services:
+
+| Constant | Service | Default |
+|----------|---------|---------|
+| `MaxFailedAttempts` | `AuthenticationService` | 5 |
+| `LockoutMinutes` | `AuthenticationService` | 15 |
+| `MaxAttemptsPerIP` | `RateLimitService` | 10 |
+| `WindowMinutes` | `RateLimitService` | 5 |
+| `MaxMessages` | `InMemoryMessageRepository` | 1000 |
 
 #### **CORS Settings** (Program.cs)
 ```csharp
@@ -308,15 +380,22 @@ policy.WithOrigins(
 
 ### **Frontend Configuration**
 
-#### **Environment Variables**
-```env
-REACT_APP_BACKEND_URL=http://localhost:5000    # Development
-REACT_APP_BACKEND_URL=https://your-api.com     # Production
+#### **Centralized Config** (`src/config.js`)
+```javascript
+const config = {
+  backendUrl: process.env.REACT_APP_BACKEND_URL || 'http://localhost:5237',
+  maxMessageLength: 500,
+  maxUsernameLength: 20,
+  minUsernameLength: 2,
+  minPasswordLength: 6,
+  hubPath: '/chathub',
+  maxReconnectAttempts: 3,
+};
 ```
 
 #### **SignalR Settings** (signalRService.js)
 ```javascript
-.configureLogging(LogLevel.Information)  // Debug: LogLevel.Debug
+.configureLogging(LogLevel.Warning)     // Debug: LogLevel.Debug
 .withAutomaticReconnect()               // Auto-reconnection enabled
 ```
 
@@ -329,7 +408,7 @@ REACT_APP_BACKEND_URL=https://your-api.com     # Production
 Error: Failed to complete negotiation
 ```
 **Solutions:**
-- Verify backend is running on correct port
+- Verify backend is running on correct port (`5237` by default)
 - Check CORS configuration includes frontend URL
 - Ensure firewall allows the ports
 
@@ -338,7 +417,7 @@ Error: Failed to complete negotiation
 Error: Username not found
 ```
 **Solutions:**
-- Verify username exists (case-sensitive)
+- Verify username exists (case-insensitive)
 - Check if account is locked (wait for timeout)
 - Ensure password meets requirements
 
@@ -360,6 +439,12 @@ Access blocked by CORS policy
 - Restart backend after CORS changes
 - Check for typos in domain names
 
+#### **OpenSSL Error (Node.js 24+)**
+```
+ERR_OSSL_EVP_UNSUPPORTED
+```
+**Solution:** Set `NODE_OPTIONS=--openssl-legacy-provider` before running npm commands.
+
 ### **Debug Commands**
 
 #### **Backend Debugging**
@@ -369,7 +454,7 @@ export ASPNETCORE_ENVIRONMENT=Development
 dotnet run --verbosity detailed
 
 # Check connection endpoints
-curl http://localhost:5000/chathub/negotiate
+curl http://localhost:5237/chathub/negotiate
 ```
 
 #### **Frontend Debugging**
@@ -389,21 +474,6 @@ curl http://localhost:5000/chathub/negotiate
 - **Memory Management**: Garbage collection for disconnected users
 - **Compression**: Automatic message compression for large payloads
 
-### **Monitoring Capabilities**
-```csharp
-// Available monitoring methods
-_chatService.GetRegisteredUserCount()  // Total registered users
-_chatService.GetOnlineUserCount()      // Currently online users
-_chatService.GetBlockedIPCount()       // Blocked IP addresses
-_chatService.GetLockedAccountCount()   // Locked user accounts
-```
-
-### **Production Monitoring**
-- Monitor connection success rates
-- Track authentication failure patterns
-- Alert on excessive lockouts
-- Monitor memory usage and message throughput
-
 ## 🔄 **Future Enhancements**
 
 ### **Planned Features**
@@ -412,7 +482,6 @@ _chatService.GetLockedAccountCount()   // Locked user accounts
 - [ ] **Private Messages** - Direct messaging between users
 - [ ] **Chat Rooms** - Multiple chat channels
 - [ ] **Voice Messages** - Audio message support
-- [ ] **Dark Mode** - Theme switching
 - [ ] **Message Search** - Search through chat history
 - [ ] **Admin Panel** - User management and moderation
 
@@ -457,11 +526,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - 🐛 **Bug Reports**: Create an issue with detailed reproduction steps
 - 💡 **Feature Requests**: Suggest improvements via GitHub issues
 - 💬 **Community**: Join our discussions for questions and tips
-
-### **Contact**
-- **GitHub Issues**: For bugs and feature requests
-- **Email**: [your-email@domain.com] for security concerns
-- **Discord**: [Your Discord Server] for community chat
 
 ---
 

@@ -1,81 +1,81 @@
 import React, { useEffect, useRef } from 'react';
 
-const MessageList = ({ messages, currentUsername }) => {
-  const messagesEndRef = useRef(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+const MessageList = ({ messages, currentUsername, activeChat }) => {
+  const endRef = useRef(null);
 
   useEffect(() => {
-    scrollToBottom();
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const formatTimestamp = (timestamp) => {
     const date = new Date(timestamp);
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const isToday =
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth() &&
+      date.getDate() === now.getDate();
 
-    const timeString = date.toLocaleTimeString('en-US', {
+    const time = date.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
     });
 
-    if (messageDate.getTime() === today.getTime()) {
-      return timeString;
-    } else {
-      return `${date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
-      })} ${timeString}`;
-    }
+    return isToday
+      ? time
+      : `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ${time}`;
   };
 
-  const renderMessage = (message, index) => {
-    if (message.type === 'system') {
-      return (
-        <div key={`${message.id}-${index}`} className="message system-message">
-          <div className="message-content">
-            {message.message}
-          </div>
-        </div>
-      );
-    }
+  const getInitials = (name) =>
+    name ? name.slice(0, 2).toUpperCase() : '??';
 
-    const isOwnMessage = message.username === currentUsername;
-
-    return (
-      <div
-        key={`${message.id}-${index}`}
-        className={`message ${isOwnMessage ? 'own-message' : ''}`}
-      >
-        <div className="message-header">
-          <span className="message-username">
-            {isOwnMessage ? 'You' : message.username}
-          </span>
-          <span className="message-timestamp">
-            {formatTimestamp(message.timestamp)}
-          </span>
-        </div>
-        <div className="message-content">
-          {message.message}
-        </div>
-      </div>
-    );
-  };
+  const emptyText = activeChat
+    ? `No messages with ${activeChat} yet. Say hi! 👋`
+    : 'No messages yet. Start the conversation! 👋';
 
   return (
     <div className="message-list">
       {messages.length === 0 ? (
         <div className="no-messages">
-          <p>No messages yet. Start the conversation! 👋</p>
+          <p>{emptyText}</p>
         </div>
       ) : (
-        messages.map((message, index) => renderMessage(message, index))
+        messages.map((msg, i) => {
+          if (msg.type === 'system') {
+            return (
+              <div key={`${msg.id}-${i}`} className="system-message">
+                {msg.message}
+              </div>
+            );
+          }
+
+          const isOwn = msg.username === currentUsername;
+
+          return (
+            <div
+              key={`${msg.id}-${i}`}
+              className={`message ${isOwn ? 'own-message' : ''}`}
+            >
+              <div className="message-avatar">{getInitials(msg.username)}</div>
+              <div className="message-bubble">
+                <div className="message-header">
+                  <span className="message-username">
+                    {isOwn ? 'You' : msg.username}
+                  </span>
+                  {msg.type === 'private' && (
+                    <span className="private-label">Private</span>
+                  )}
+                  <span className="message-timestamp">
+                    {formatTimestamp(msg.timestamp)}
+                  </span>
+                </div>
+                <div className="message-content">{msg.message}</div>
+              </div>
+            </div>
+          );
+        })
       )}
-      <div ref={messagesEndRef} />
+      <div ref={endRef} />
     </div>
   );
 };

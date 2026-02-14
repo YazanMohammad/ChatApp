@@ -2,45 +2,33 @@ import React, { useState, useEffect } from 'react';
 import signalRService from '../services/signalRService';
 
 const ConnectionStatus = () => {
-  const [connectionState, setConnectionState] = useState({
-    isConnected: false,
-    connectionState: 'Disconnected'
-  });
+  const [state, setState] = useState({ isConnected: false, connectionState: 'Disconnected' });
 
   useEffect(() => {
-    const updateConnectionState = () => {
-      setConnectionState(signalRService.getConnectionState());
-    };
-
-    // Update connection state every second
-    const interval = setInterval(updateConnectionState, 1000);
-
-    // Initial update
-    updateConnectionState();
-
+    const update = () => setState(signalRService.getConnectionState());
+    update();
+    const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, []);
 
-  const getStatusClass = () => {
-    if (connectionState.isConnected) return 'status-connected';
-    if (connectionState.connectionState === 'Connecting' ||
-        connectionState.connectionState === 'Reconnecting') {
-      return 'status-connecting';
-    }
-    return 'status-disconnected';
-  };
+  const statusClass = state.isConnected
+    ? 'status-connected'
+    : ['Connecting', 'Reconnecting'].includes(state.connectionState)
+      ? 'status-connecting'
+      : 'status-disconnected';
 
-  const getStatusText = () => {
-    if (connectionState.isConnected) return 'Connected';
-    if (connectionState.connectionState === 'Connecting') return 'Connecting...';
-    if (connectionState.connectionState === 'Reconnecting') return 'Reconnecting...';
-    return 'Disconnected';
-  };
+  const statusText = state.isConnected
+    ? 'Connected'
+    : state.connectionState === 'Connecting'
+      ? 'Connecting…'
+      : state.connectionState === 'Reconnecting'
+        ? 'Reconnecting…'
+        : 'Disconnected';
 
   return (
     <div className="connection-status">
-      <div className={`status-indicator ${getStatusClass()}`}></div>
-      <span>{getStatusText()}</span>
+      <div className={`status-indicator ${statusClass}`} />
+      <span>{statusText}</span>
     </div>
   );
 };
