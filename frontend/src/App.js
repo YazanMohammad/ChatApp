@@ -3,7 +3,11 @@ import './App.css';
 import Chat from './components/Chat';
 import ConnectionStatus from './components/ConnectionStatus';
 import UserSetup from './components/UserSetup';
-import signalRService from './services/signalRService';
+import config from './config';
+import signalRServiceOriginal from './services/signalRService';
+import pollingServiceOriginal from './services/pollingService';
+
+const signalRService = config.usePolling ? pollingServiceOriginal : signalRServiceOriginal;
 
 function App() {
   const [username, setUsername] = useState('');

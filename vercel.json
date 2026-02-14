@@ -1,0 +1,24 @@
+{
+    "version": 2,
+    "buildCommand": "cd frontend && npm install && npm run build",
+    "outputDirectory": "frontend/build",
+    "framework": null,
+    "env": {
+        "REACT_APP_USE_POLLING": "true",
+        "REACT_APP_BACKEND_URL": "",
+        "NODE_OPTIONS": "--openssl-legacy-provider"
+    },
+    "routes": [
+        {
+            "src": "/api/(.*)",
+            "dest": "/api/$1"
+        },
+        {
+            "handle": "filesystem"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/index.html"
+        }
+    ]
+}

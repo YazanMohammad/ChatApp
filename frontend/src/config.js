@@ -7,6 +7,8 @@ const config = {
     maxPasswordLength: 100,
     hubPath: '/chathub',
     maxReconnectAttempts: 3,
+    // Set to true when deploying to Vercel (uses HTTP polling instead of SignalR)
+    usePolling: process.env.REACT_APP_USE_POLLING === 'true',
 };
 
 export default config;
