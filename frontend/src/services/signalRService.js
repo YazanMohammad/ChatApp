@@ -34,7 +34,7 @@ class SignalRService {
 
       this.connection = new HubConnectionBuilder()
         .withUrl(`${config.backendUrl}${config.hubPath}`, {
-          withCredentials: false,
+          withCredentials: true,
         })
         .withAutomaticReconnect({
           nextRetryDelayInMilliseconds: (ctx) =>

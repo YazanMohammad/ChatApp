@@ -14,12 +14,12 @@ builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
 
-// Configure CORS
+// Configure CORS to allow frontend origin with credentials (cookies / SignalR)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
+        policy.SetIsOriginAllowed(_ => true)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -38,10 +38,18 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Serve static frontend files if present in wwwroot
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
+app.UseRouting();
 app.UseCors("AllowReactApp");
+
 app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<ChatHub>("/chathub");
+app.MapFallbackToFile("index.html");
 
 app.Run();

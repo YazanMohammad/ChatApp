@@ -15,4 +15,9 @@ public interface IUserRepository
     void SetOffline(string connectionId);
     List<User> GetOnlineUsers();
     bool IsValidUsername(string username);
+    string CreateSession(string username);
+    User? GetUserBySessionToken(string token);
+    void RemoveSession(string token);
+    void TouchUser(string username);
+    void PruneOffline(TimeSpan timeout);
 }

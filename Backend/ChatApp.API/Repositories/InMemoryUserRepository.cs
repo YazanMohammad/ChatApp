@@ -8,6 +8,7 @@ public class InMemoryUserRepository : IUserRepository
 {
     private readonly ConcurrentDictionary<string, User> _registeredUsers = new();
     private readonly ConcurrentDictionary<string, User> _connectedUsers = new();
+    private readonly ConcurrentDictionary<string, string> _sessions = new();
 
     private static readonly string[] Colors =
     {
@@ -59,9 +60,71 @@ public class InMemoryUserRepository : IUserRepository
         }
     }
 
+    public string CreateSession(string username)
+    {
+        var token = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+        var lower = username.ToLower();
+        _sessions[token] = lower;
+
+        if (_registeredUsers.TryGetValue(lower, out var user))
+        {
+            user.IsOnline = true;
+            user.LastSeen = DateTime.UtcNow;
+        }
+        return token;
+    }
+
+    public User? GetUserBySessionToken(string token)
+    {
+        if (string.IsNullOrEmpty(token)) return null;
+        if (_sessions.TryGetValue(token, out var username))
+        {
+            return GetByUsername(username);
+        }
+        return null;
+    }
+
+    public void RemoveSession(string token)
+    {
+        if (string.IsNullOrEmpty(token)) return;
+        if (_sessions.TryRemove(token, out var username))
+        {
+            if (_registeredUsers.TryGetValue(username, out var user))
+            {
+                // If user is not connected via SignalR, set offline
+                if (string.IsNullOrEmpty(user.ConnectionId))
+                {
+                    user.IsOnline = false;
+                }
+            }
+        }
+    }
+
+    public void TouchUser(string username)
+    {
+        if (_registeredUsers.TryGetValue(username.ToLower(), out var user))
+        {
+            user.IsOnline = true;
+            user.LastSeen = DateTime.UtcNow;
+        }
+    }
+
+    public void PruneOffline(TimeSpan timeout)
+    {
+        var cutoff = DateTime.UtcNow - timeout;
+        foreach (var user in _registeredUsers.Values)
+        {
+            if (user.IsOnline && string.IsNullOrEmpty(user.ConnectionId) && user.LastSeen < cutoff)
+            {
+                user.IsOnline = false;
+            }
+        }
+    }
+
     public List<User> GetOnlineUsers()
     {
-        return _connectedUsers.Values
+        PruneOffline(TimeSpan.FromSeconds(15));
+        return _registeredUsers.Values
             .Where(u => u.IsOnline)
             .OrderBy(u => u.Username)
             .ToList();

@@ -85,8 +85,13 @@ The backend follows **SOLID principles** with a clean separation of concerns:
 
 ```
 Backend/ChatApp.API/
+├── Controllers/
+│   ├── AuthController.cs          # REST endpoints for /api/auth and /api/logout
+│   ├── DmController.cs            # REST endpoints for /api/dm
+│   ├── MessagesController.cs      # REST endpoints for /api/messages
+│   └── UsersController.cs         # REST endpoints for /api/users and /api/heartbeat
 ├── Hubs/
-│   └── ChatHub.cs              # SignalR hub (depends on interfaces only)
+│   └── ChatHub.cs                 # SignalR hub for real-time WebSockets
 ├── Models/
 │   ├── AuthRequest.cs
 │   ├── AuthResponse.cs
@@ -94,18 +99,18 @@ Backend/ChatApp.API/
 │   ├── IPAttemptTracker.cs
 │   └── User.cs
 ├── Repositories/
-│   ├── IUserRepository.cs          # User CRUD & online state
+│   ├── IUserRepository.cs         # User CRUD, session management & online state
 │   ├── InMemoryUserRepository.cs
-│   ├── IMessageRepository.cs       # Message storage & retrieval
+│   ├── IMessageRepository.cs      # Message storage, retrieval & since-filtering
 │   └── InMemoryMessageRepository.cs
 ├── Services/
-│   ├── IPasswordService.cs         # Hash, verify, strength validation
+│   ├── IPasswordService.cs        # Hash, verify, strength validation
 │   ├── PasswordService.cs
-│   ├── IRateLimitService.cs        # IP tracking, brute-force protection
+│   ├── IRateLimitService.cs       # IP tracking, brute-force protection
 │   ├── RateLimitService.cs
-│   ├── IAuthenticationService.cs   # Orchestrates auth flow
+│   ├── IAuthenticationService.cs  # Orchestrates auth flow
 │   └── AuthenticationService.cs
-└── Program.cs                      # DI registration & middleware
+└── Program.cs                     # DI registration, CORS, Controllers & SignalR middleware
 ```
 
 All services are registered as **singletons** via dependency injection in `Program.cs`.

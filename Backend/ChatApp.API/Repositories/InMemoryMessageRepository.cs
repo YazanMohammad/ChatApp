@@ -34,6 +34,18 @@ public class InMemoryMessageRepository : IMessageRepository
         }
     }
 
+    public List<ChatMessage> GetMessagesSince(long sinceMs, int count = 200)
+    {
+        lock (_lock)
+        {
+            return _messages
+                .Where(m => new DateTimeOffset(m.Timestamp).ToUnixTimeMilliseconds() > sinceMs)
+                .TakeLast(count)
+                .OrderBy(m => m.Timestamp)
+                .ToList();
+        }
+    }
+
     public void AddPrivate(ChatMessage message)
     {
         lock (_lock)
@@ -57,6 +69,23 @@ public class InMemoryMessageRepository : IMessageRepository
                      string.Equals(m.Recipient, user2, StringComparison.OrdinalIgnoreCase)) ||
                     (string.Equals(m.Username, user2, StringComparison.OrdinalIgnoreCase) &&
                      string.Equals(m.Recipient, user1, StringComparison.OrdinalIgnoreCase)))
+                .TakeLast(count)
+                .OrderBy(m => m.Timestamp)
+                .ToList();
+        }
+    }
+
+    public List<ChatMessage> GetPrivateMessagesSince(string user1, string user2, long sinceMs, int count = 200)
+    {
+        lock (_lock)
+        {
+            return _privateMessages
+                .Where(m =>
+                    ((string.Equals(m.Username, user1, StringComparison.OrdinalIgnoreCase) &&
+                      string.Equals(m.Recipient, user2, StringComparison.OrdinalIgnoreCase)) ||
+                     (string.Equals(m.Username, user2, StringComparison.OrdinalIgnoreCase) &&
+                      string.Equals(m.Recipient, user1, StringComparison.OrdinalIgnoreCase))) &&
+                    new DateTimeOffset(m.Timestamp).ToUnixTimeMilliseconds() > sinceMs)
                 .TakeLast(count)
                 .OrderBy(m => m.Timestamp)
                 .ToList();

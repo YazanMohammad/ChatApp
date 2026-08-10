@@ -41,8 +41,7 @@ function App() {
   useEffect(() => {
     const storedUsername = localStorage.getItem('chatUsername');
     if (storedUsername) setUsername(storedUsername);
-    return () => { handleDisconnect(); };
-  }, [handleDisconnect]);
+  }, []);
 
   const handleClearChat = useCallback(() => {
     if (activeChat) {
