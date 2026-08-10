@@ -1,5 +1,8 @@
+const rawUrl = process.env.REACT_APP_BACKEND_URL;
+const backendUrl = (rawUrl && rawUrl.trim() !== '') ? rawUrl.trim().replace(/\/+$/, '') : 'http://localhost:5237';
+
 const config = {
-    backendUrl: process.env.REACT_APP_BACKEND_URL || 'http://localhost:5237',
+    backendUrl,
     maxMessageLength: 500,
     maxUsernameLength: 20,
     minUsernameLength: 2,
@@ -7,7 +10,6 @@ const config = {
     maxPasswordLength: 100,
     hubPath: '/chathub',
     maxReconnectAttempts: 3,
-    // Set to true when deploying to Vercel (uses HTTP polling instead of SignalR)
     usePolling: process.env.REACT_APP_USE_POLLING === 'true',
 };
 
