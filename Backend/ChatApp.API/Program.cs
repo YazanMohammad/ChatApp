@@ -1,6 +1,7 @@
 using ChatApp.API.Hubs;
 using ChatApp.API.Repositories;
 using ChatApp.API.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,14 @@ builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
 
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
+
+// Configure Forwarded Headers for reverse proxy deployment (Railway, Render, Fly.io, etc.)
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // Configure CORS to allow frontend origin with credentials (cookies / SignalR)
 builder.Services.AddCors(options =>
@@ -30,6 +39,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 if (app.Environment.IsDevelopment())
 {
