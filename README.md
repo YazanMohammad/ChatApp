@@ -1,6 +1,50 @@
 # 🔐 Secure Real-Time Chat Application
 
-A professional, secure real-time chat application built with **ASP.NET Core + SignalR** backend and **React** frontend, featuring comprehensive authentication, brute force protection, and **private messaging**.
+[![.NET 9.0](https://img.shields.io/badge/.NET-9.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
+[![React 18](https://img.shields.io/badge/React-18.x-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org/)
+[![SignalR](https://img.shields.io/badge/SignalR-WebSockets-CC292B?style=for-the-badge)](https://docs.microsoft.com/en-us/aspnet/core/signalr/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker)](https://www.docker.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+
+A production-ready, secure real-time messaging platform built with **ASP.NET Core 9 + SignalR** on the backend and **React 18** on the frontend. Features enterprise-grade authentication, dual-tier brute-force protection, real-time WebSockets with REST fallback polling, direct private messaging (DMs), and a modern dark glassmorphism UI.
+
+---
+
+## 📑 Table of Contents
+
+- [� Secure Real-Time Chat Application](#-secure-real-time-chat-application)
+  - [📑 Table of Contents](#-table-of-contents)
+  - [📸 Preview](#-preview)
+    - [Login Screen](#login-screen)
+    - [General Chat](#general-chat)
+    - [Private Messaging (DM)](#private-messaging-dm)
+    - [Feature \& Communication Flow](#feature--communication-flow)
+  - [✨ Core Features](#-core-features)
+    - [💬 **Real-Time \& Private Messaging**](#-real-time--private-messaging)
+    - [🛡️ **Enterprise Security**](#️-enterprise-security)
+    - [💎 **User Experience \& Architecture**](#-user-experience--architecture)
+  - [🛠️ Tech Stack](#️-tech-stack)
+  - [🏗️ Architecture \& Project Structure](#️-architecture--project-structure)
+  - [📋 Prerequisites](#-prerequisites)
+  - [🚀 Quick Start \& Local Setup](#-quick-start--local-setup)
+    - [1. Clone Repository](#1-clone-repository)
+    - [2. Backend Setup (.NET 9)](#2-backend-setup-net-9)
+    - [3. Frontend Setup (React)](#3-frontend-setup-react)
+    - [4. Docker Setup (Optional)](#4-docker-setup-optional)
+  - [🔒 Security Architecture](#-security-architecture)
+    - [Authentication Flow](#authentication-flow)
+    - [Brute Force \& Rate Limiting](#brute-force--rate-limiting)
+    - [Password Security](#password-security)
+  - [📊 API Documentation](#-api-documentation)
+    - [SignalR Hub Methods \& Events](#signalr-hub-methods--events)
+      - [Client Invokes (Methods)](#client-invokes-methods)
+      - [Client Listens (Events)](#client-listens-events)
+    - [REST API Endpoints](#rest-api-endpoints)
+      - [Authentication \& User State](#authentication--user-state)
+      - [Messages \& DMs](#messages--dms)
+  - [🤝 Contributing \& License](#-contributing--license)
+
+---
 
 ## 📸 Preview
 
@@ -13,125 +57,145 @@ A professional, secure real-time chat application built with **ASP.NET Core + Si
 ### Private Messaging (DM)
 ![DM](DM.png)
 
-### Feature Flow
+### Feature & Communication Flow
 
 ```mermaid
-graph LR
-    A[Login / Sign Up] --> B[General Chat]
-    B --> C{Click User}
-    C --> D[Private DM]
-    D --> E{Click General Chat}
-    E --> B
-    D -- "🔴 Unread Badge" --> B
+graph TD
+    User[Client Browser] --> Auth{Authentication}
+    Auth -->|Credentials Check| RateLimit[Rate Limit Service]
+    RateLimit -->|Valid| Session[Session Token / Hub Connection]
+
+    Session --> Mode{Transport Mode}
+    Mode -->|Primary| SignalR[SignalR WebSocket Hub]
+    Mode -->|Fallback| RestAPI[REST API + Polling]
+
+    SignalR --> GeneralChat[Global Broadcast]
+    SignalR --> DirectMessage[Private DM Channel]
+    RestAPI --> GeneralChat
+    RestAPI --> DirectMessage
+
+    GeneralChat --> Store[(InMemory Repositories)]
+    DirectMessage --> Store
 ```
 
+---
 
-## 🚀 Features
+## ✨ Core Features
 
-### 🔥 **Core Chat Features**
-- ✅ **Real-time messaging** - Instant message delivery across all connected clients
-- ✅ **Private messaging** - Click any user to open an inline DM conversation
-- ✅ **Unread badges** - Notification counter on users with new DMs
-- ✅ **Clear chat** - One-click clear for both general and DM views
-- ✅ **User authentication** - Secure username + password system
-- ✅ **Online user list** - See who's currently connected
-- ✅ **Message history** - Previous messages loaded on join
-- ✅ **System notifications** - User join/leave announcements
-- ✅ **Connection status** - Visual indicator with auto-reconnection
-- ✅ **Responsive design** - Works perfectly on desktop and mobile
+### 💬 **Real-Time & Private Messaging**
+- **Instant Delivery**: WebSocket communication via ASP.NET Core SignalR for sub-millisecond updates.
+- **Direct Messaging (DM)**: One-on-one private conversations with inline user switching.
+- **Unread Counter Badges**: Real-time badges indicating pending unread DMs per online user.
+- **Chat History & Persistence**: Automatic retrieval of recent channel & DM message history upon connection.
+- **System Announcements**: User join, leave, and disconnection notifications broadcasted live.
+- **REST + Polling Fallback**: Built-in fallback HTTP polling mechanism when WebSockets are blocked or disconnected.
 
-### 🛡️ **Security Features**
-- ✅ **Brute force protection** - Rate limiting and account lockouts
-- ✅ **Password security** - Strength requirements and secure hashing
-- ✅ **IP tracking** - Automatic blocking for excessive attempts
-- ✅ **Input validation** - XSS protection and sanitization
-- ✅ **Progressive delays** - Increasing delays between failed attempts
-- ✅ **Account lockouts** - 15-minute lockout after 5 failed attempts
-- ✅ **Real-time feedback** - Countdown timers and security status
+### 🛡️ **Enterprise Security**
+- **Brute Force Protection**: Dual-level rate limiting at both the IP address and User account level.
+- **Account Lockouts**: Automatic 15-minute account lockout after 5 consecutive failed login attempts.
+- **IP Rate Limiting**: 5-minute block after 10 failed login attempts from a single IP.
+- **Password Strength Enforcement**: Minimum length, character diversity requirements, and SHA256 salted hashing.
+- **XSS & Injection Defense**: Robust server-side and client-side message sanitization.
+- **Secure Session Management**: HTTP-only HttpContext cookies for REST endpoints and token tracking.
 
-### 💎 **Professional Features**
-- ✅ **No database required** - In-memory storage for easy deployment
-- ✅ **Auto-reconnection** - Handles connection drops gracefully
-- ✅ **Message persistence** - Messages survive until server restart
-- ✅ **User colors** - Consistent color assignment per user
-- ✅ **Timestamps** - Formatted message timing
-- ✅ **Error handling** - Graceful error recovery and user feedback
-- ✅ **Dark glassmorphism UI** - Modern premium theme with animations
+### 💎 **User Experience & Architecture**
+- **Dark Glassmorphism UI**: Premium visual aesthetics with CSS backdrop filters, gradients, and micro-animations.
+- **Responsive Layout**: Designed for mobile, tablet, and desktop viewports.
+- **Clean Code Architecture**: Solid C# backend applying Repository, Service, and Controller separation of concerns.
+- **Zero Database Setup**: Lightweight in-memory state repository for rapid zero-dependency deployment.
 
-## 🛠 **Tech Stack**
+---
 
-### **Backend**
-- **ASP.NET Core 9.0** - Web API framework
-- **SignalR** - Real-time WebSocket communication
-- **C# 13** - Latest language features
-- **In-Memory Storage** - No database complexity
-- **SOLID Architecture** - Interface-driven services and repositories via DI
+## 🛠️ Tech Stack
 
-### **Frontend**
-- **React 18** - Modern UI framework with hooks
-- **SignalR JavaScript Client** - Real-time communication
-- **Modern CSS** - Dark glassmorphism theme with animations
-- **ES6+** - Latest JavaScript features
+| Domain | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Backend Framework** | ASP.NET Core 9.0 | High-performance Web API & Middleware |
+| **Real-Time Engine** | ASP.NET Core SignalR | Bidirectional WebSockets with fallback |
+| **Language** | C# 13 / ES6+ JavaScript | Strongly typed backend & dynamic client logic |
+| **Frontend UI** | React 18 | Component-driven declarative UI framework |
+| **Styling** | Modern Vanilla CSS | Custom Glassmorphism design system & CSS variables |
+| **Security** | SHA256 / RateLimitService | Password hashing, IP tracking & brute force protection |
+| **Containerization** | Docker | Multi-stage Docker container build |
 
-### **Security**
-- **SHA256 Hashing** - Secure password storage
-- **Rate Limiting** - Brute force attack prevention
-- **Input Validation** - XSS and injection protection
-- **CORS Configuration** - Secure cross-origin requests
+---
 
-## 🏗️ **Architecture**
+## 🏗️ Architecture & Project Structure
 
-The backend follows **SOLID principles** with a clean separation of concerns:
+The project strictly follows **SOLID design principles** with dependency injection, interface segregation, and clean architecture separation between WebSockets, REST endpoints, services, and repositories.
 
 ```
-Backend/ChatApp.API/
-├── Controllers/
-│   ├── AuthController.cs          # REST endpoints for /api/auth and /api/logout
-│   ├── DmController.cs            # REST endpoints for /api/dm
-│   ├── MessagesController.cs      # REST endpoints for /api/messages
-│   └── UsersController.cs         # REST endpoints for /api/users and /api/heartbeat
-├── Hubs/
-│   └── ChatHub.cs                 # SignalR hub for real-time WebSockets
-├── Models/
-│   ├── AuthRequest.cs
-│   ├── AuthResponse.cs
-│   ├── ChatMessage.cs
-│   ├── IPAttemptTracker.cs
-│   └── User.cs
-├── Repositories/
-│   ├── IUserRepository.cs         # User CRUD, session management & online state
-│   ├── InMemoryUserRepository.cs
-│   ├── IMessageRepository.cs      # Message storage, retrieval & since-filtering
-│   └── InMemoryMessageRepository.cs
-├── Services/
-│   ├── IPasswordService.cs        # Hash, verify, strength validation
-│   ├── PasswordService.cs
-│   ├── IRateLimitService.cs       # IP tracking, brute-force protection
-│   ├── RateLimitService.cs
-│   ├── IAuthenticationService.cs  # Orchestrates auth flow
-│   └── AuthenticationService.cs
-└── Program.cs                     # DI registration, CORS, Controllers & SignalR middleware
+ChatApp/
+├── Backend/
+│   └── ChatApp.API/
+│       ├── Controllers/
+│       │   ├── AuthController.cs      # REST endpoints: POST /api/auth, /api/logout
+│       │   ├── DmController.cs        # REST endpoints: GET/POST /api/dm
+│       │   ├── MessagesController.cs  # REST endpoints: GET/POST /api/messages
+│       │   └── UsersController.cs     # REST endpoints: GET /api/users, POST /api/heartbeat
+│       ├── Hubs/
+│       │   └── ChatHub.cs             # Real-time WebSocket hub methods & events
+│       ├── Models/
+│       │   ├── AuthRequest.cs         # Data models for authentication
+│       │   ├── AuthResponse.cs
+│       │   ├── ChatMessage.cs         # Unified broadcast & DM message structure
+│       │   ├── IPAttemptTracker.cs    # IP tracking metrics
+│       │   └── User.cs                # User domain model
+│       ├── Repositories/
+│       │   ├── IUserRepository.cs     # User state & session interface
+│       │   ├── InMemoryUserRepository.cs
+│       │   ├── IMessageRepository.cs  # Thread-safe message buffer interface
+│       │   └── InMemoryMessageRepository.cs
+│       ├── Services/
+│       │   ├── IPasswordService.cs    # Password validation & hashing interface
+│       │   ├── PasswordService.cs
+│       │   ├── IRateLimitService.cs   # IP & brute force rate limiter interface
+│       │   ├── RateLimitService.cs
+│       │   ├── IAuthenticationService.cs # Core auth logic orchestrator
+│       │   └── AuthenticationService.cs
+│       ├── Dockerfile                 # Backend containerization file
+│       └── Program.cs                 # Dependency Injection, Middleware & SignalR routes
+├── frontend/
+│   └── src/
+│       ├── components/
+│       │   ├── Chat.js                # Main chat window container
+│       │   ├── ConnectionStatus.js    # Visual WebSocket status indicator
+│       │   ├── MessageInput.js        # Text composer component
+│       │   ├── MessageList.js        # Message stream rendering component
+│       │   └── UserSetup.js           # Authentication & Registration form
+│       ├── services/
+│       │   ├── signalRService.js      # WebSocket client connection manager
+│       │   └── pollingService.js      # HTTP REST fallback polling service
+│       ├── config.js                  # Centralized client configuration settings
+│       ├── App.js                     # React root component & routing logic
+│       └── App.css                    # Glassmorphism styling rules
+├── Dockerfile                         # Root multi-stage Docker build file
+└── README.md
 ```
 
-All services are registered as **singletons** via dependency injection in `Program.cs`.
+---
 
-## 📋 **Prerequisites**
+## 📋 Prerequisites
 
-- [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-- [Node.js](https://nodejs.org/) (version 16.0 or later)
-- [Git](https://git-scm.com/) for version control
-- Modern web browser (Chrome 88+, Firefox 85+, Safari 14+, Edge 88+)
+Ensure you have the following installed locally:
 
-## 🔧 **Installation & Setup**
+- **[.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)**
+- **[Node.js](https://nodejs.org/)** (v16.0 or higher)
+- **[Docker Desktop](https://www.docker.com/)** *(Optional, for containerized execution)*
+- **Git**
 
-### **1. Clone Repository**
+---
+
+## 🚀 Quick Start & Local Setup
+
+### 1. Clone Repository
 
 ```bash
 git clone https://github.com/YazanMohammad/ChatApp.git
 cd ChatApp
 ```
 
-### **2. Backend Setup**
+### 2. Backend Setup (.NET 9)
 
 ```bash
 cd Backend/ChatApp.API
@@ -139,401 +203,155 @@ cd Backend/ChatApp.API
 # Restore dependencies
 dotnet restore
 
-# Build the project
-dotnet build
-
-# Run the backend
+# Build and run the project
 dotnet run
 ```
 
-The backend will be available at:
+Backend service endpoints:
 - **HTTP**: `http://localhost:5237`
 - **HTTPS**: `https://localhost:7115`
-- **SignalR Hub**: `/chathub`
+- **SignalR Hub**: `http://localhost:5237/chathub`
 
-### **3. Frontend Setup**
+### 3. Frontend Setup (React)
+
+Open a new terminal tab/window:
 
 ```bash
 cd frontend
 
-# Install dependencies
+# Install node dependencies
 npm install
 
 # Start development server
 npm start
 ```
 
-> **Note (Node.js 24+):** If you're running Node.js 24 or later, start the dev server with:
+> ⚠️ **Node.js 24+ Compatibility Note:**
+> If using Node.js 24 or newer, run the start command with the legacy OpenSSL flag:
 > ```bash
-> # PowerShell
-> $env:NODE_OPTIONS="--openssl-legacy-provider"; npm start
->
-> # Bash
+> # Linux / macOS (Bash)
 > NODE_OPTIONS=--openssl-legacy-provider npm start
+>
+> # Windows (PowerShell)
+> $env:NODE_OPTIONS="--openssl-legacy-provider"; npm start
 > ```
-> This is needed because `react-scripts@4.0.3` uses an older webpack version incompatible with OpenSSL 3.x.
 
-The frontend will be available at:
-- **Development**: `http://localhost:3000`
+The frontend web app will open at `http://localhost:3000`.
 
-## 🎯 **Usage**
+### 4. Docker Setup (Optional)
 
-### **Getting Started**
-1. **Start Backend**: Run `dotnet run` in the Backend directory
-2. **Start Frontend**: Run `npm start` in the frontend directory
-3. **Open Browser**: Navigate to `http://localhost:3000`
+To run the application inside a Docker container:
 
-### **Creating an Account**
-1. Click **"Need an account? Sign up"**
-2. Enter a **username** (2-20 characters, letters/numbers/underscore/hyphen)
-3. Create a **password** (minimum 6 characters with letters and numbers)
-4. Click **"Create Account"**
-
-### **Logging In**
-1. Enter your **username and password**
-2. Click **"Login"**
-3. Start chatting immediately!
-
-### **Security Features in Action**
-
-#### **Password Requirements**
-- ✅ Minimum 6 characters
-- ✅ Must contain letters AND numbers
-- ✅ Blocks common weak passwords
-- ✅ Real-time strength indicator
-
-#### **Brute Force Protection**
-- ⚠️ **5 failed attempts** → Account locked for 15 minutes
-- ⚠️ **10 attempts per IP** → IP blocked for 5 minutes
-- ⚠️ **Progressive delays** between attempts
-- ⚠️ **Clear error messages** with countdown timers
-
-## 🚀 **Deployment (100% Free)**
-
-### **Backend Deployment (Railway)**
-
-1. **Prepare for Production**
-   ```bash
-   # Create Dockerfile in Backend/ChatApp.API/
-   ```
-
-2. **Deploy to Railway**
-   - Go to [railway.app](https://railway.app)
-   - Sign up with GitHub
-   - Click "New Project" → "Deploy from GitHub repo"
-   - Select your repository
-   - Railway auto-detects .NET and deploys
-   - Get your API URL: `https://your-app.up.railway.app`
-
-3. **Update CORS Settings**
-   ```csharp
-   // In Program.cs, update with your Netlify URL
-   policy.WithOrigins(
-       "http://localhost:3000",
-       "https://your-chat-app.netlify.app"
-   )
-   ```
-
-### **Frontend Deployment (Netlify)**
-
-1. **Update Backend URL**
-   ```bash
-   # Create .env file in frontend/
-   REACT_APP_BACKEND_URL=https://your-app.up.railway.app
-   ```
-
-2. **Deploy to Netlify**
-   - Go to [netlify.com](https://netlify.com)
-   - Sign up with GitHub
-   - Click "New site from Git"
-   - Configure build settings:
-     - **Base directory**: `frontend`
-     - **Build command**: `npm run build`
-     - **Publish directory**: `frontend/build`
-   - Add environment variable: `REACT_APP_BACKEND_URL`
-   - Deploy!
-
-### **Free Tier Limits**
-- **Railway**: 500 hours/month (24/7 operation possible)
-- **Netlify**: 100GB bandwidth/month
-- **Total Cost**: $0/month
-
-## 🔒 **Security Architecture**
-
-### **Authentication Flow**
-```
-1. User enters username + password
-2. Frontend validates input format
-3. Backend checks IP rate limits (IRateLimitService)
-4. Password strength validation for new users (IPasswordService)
-5. Secure hash comparison for existing users (IPasswordService)
-6. SignalR connection authorized on success
-7. User set online and user list broadcast (IUserRepository)
-```
-
-### **Rate Limiting System**
-```
-IP Level (RateLimitService):
-- Track attempts per IP address
-- Max 10 attempts per 5 minutes
-- Automatic IP blocking
-
-User Level (AuthenticationService):
-- Track attempts per username
-- Max 5 attempts before lockout
-- 15-minute lockout period
-- Progressive warning messages
-```
-
-### **Password Security**
-```
-Requirements:
-- Minimum 6 characters
-- At least one letter
-- At least one number
-- Blocks common passwords
-
-Storage:
-- SHA256 with custom salt
-- Never stored in plain text
-- Frontend never stores passwords
-```
-
-## 📊 **API Documentation**
-
-### **SignalR Hub Methods**
-
-#### **AuthenticateAndJoin**
-```javascript
-await connection.invoke('AuthenticateAndJoin', username, password, isNewUser);
-// Returns: { success: boolean, message: string, user?: User }
-```
-
-#### **SendMessage**
-```javascript
-await connection.invoke('SendMessage', username, message);
-// Broadcasts to all connected clients
-```
-
-#### **LeaveChat**
-```javascript
-await connection.invoke('LeaveChat', username);
-// Notifies other users of departure
-```
-
-### **SignalR Events**
-
-#### **Client Receives**
-- `ReceiveMessage` - New message from any user
-- `UserJoined` - Someone joined the chat
-- `UserLeft` - Someone left the chat
-- `UpdateUserList` - Current online users
-- `ChatHistory` - Previous messages on join
-- `Error` - Error messages from server
-
-## 🧪 **Testing**
-
-### **Manual Testing**
-
-#### **Basic Functionality**
-1. **Multiple Users**: Open multiple browser tabs with different usernames
-2. **Real-time Messaging**: Send messages and verify instant delivery
-3. **Connection Handling**: Refresh page and test reconnection
-4. **Mobile Testing**: Test on mobile devices for responsiveness
-
-#### **Security Testing**
-1. **Account Creation**: Test password strength requirements
-2. **Failed Logins**: Try wrong passwords to trigger lockouts
-3. **Rate Limiting**: Test multiple failed attempts from same IP
-4. **XSS Protection**: Try sending HTML/JavaScript in messages
-
-### **Automated Testing**
 ```bash
-# Backend build verification
-cd Backend/ChatApp.API
-dotnet build
+# Build Docker image
+docker build -t chathub .
 
-# Frontend component tests
-cd frontend
-npm test
+# Run container on port 8080
+docker run -p 8080:8080 chathub
 ```
-
-## 🔧 **Configuration**
-
-### **Backend Configuration**
-
-#### **Security Settings**
-
-Settings are distributed across focused services:
-
-| Constant | Service | Default |
-|----------|---------|---------|
-| `MaxFailedAttempts` | `AuthenticationService` | 5 |
-| `LockoutMinutes` | `AuthenticationService` | 15 |
-| `MaxAttemptsPerIP` | `RateLimitService` | 10 |
-| `WindowMinutes` | `RateLimitService` | 5 |
-| `MaxMessages` | `InMemoryMessageRepository` | 1000 |
-
-#### **CORS Settings** (Program.cs)
-```csharp
-// Add your production domains
-policy.WithOrigins(
-    "http://localhost:3000",
-    "https://yourdomain.com"
-)
-```
-
-### **Frontend Configuration**
-
-#### **Centralized Config** (`src/config.js`)
-```javascript
-const config = {
-  backendUrl: process.env.REACT_APP_BACKEND_URL || 'http://localhost:5237',
-  maxMessageLength: 500,
-  maxUsernameLength: 20,
-  minUsernameLength: 2,
-  minPasswordLength: 6,
-  hubPath: '/chathub',
-  maxReconnectAttempts: 3,
-};
-```
-
-#### **SignalR Settings** (signalRService.js)
-```javascript
-.configureLogging(LogLevel.Warning)     // Debug: LogLevel.Debug
-.withAutomaticReconnect()               // Auto-reconnection enabled
-```
-
-## 🚨 **Troubleshooting**
-
-### **Common Issues**
-
-#### **Connection Failed**
-```
-Error: Failed to complete negotiation
-```
-**Solutions:**
-- Verify backend is running on correct port (`5237` by default)
-- Check CORS configuration includes frontend URL
-- Ensure firewall allows the ports
-
-#### **Authentication Failed**
-```
-Error: Username not found
-```
-**Solutions:**
-- Verify username exists (case-insensitive)
-- Check if account is locked (wait for timeout)
-- Ensure password meets requirements
-
-#### **Account Locked**
-```
-Error: Account temporarily locked
-```
-**Solutions:**
-- Wait for lockout period (15 minutes)
-- Check server logs for security events
-- Contact admin if repeatedly locked
-
-#### **CORS Errors**
-```
-Access blocked by CORS policy
-```
-**Solutions:**
-- Add frontend URL to backend CORS policy
-- Restart backend after CORS changes
-- Check for typos in domain names
-
-#### **OpenSSL Error (Node.js 24+)**
-```
-ERR_OSSL_EVP_UNSUPPORTED
-```
-**Solution:** Set `NODE_OPTIONS=--openssl-legacy-provider` before running npm commands.
-
-### **Debug Commands**
-
-#### **Backend Debugging**
-```bash
-# Enable detailed logging
-export ASPNETCORE_ENVIRONMENT=Development
-dotnet run --verbosity detailed
-
-# Check connection endpoints
-curl http://localhost:5237/chathub/negotiate
-```
-
-#### **Frontend Debugging**
-```bash
-# Enable SignalR debug logging
-# In signalRService.js: .configureLogging(LogLevel.Debug)
-
-# Check console for detailed connection logs
-# Browser DevTools → Console
-```
-
-## 📈 **Performance & Monitoring**
-
-### **Performance Features**
-- **Message Cleanup**: Automatically removes old messages (keeps last 1000)
-- **Connection Pooling**: Efficient WebSocket management
-- **Memory Management**: Garbage collection for disconnected users
-- **Compression**: Automatic message compression for large payloads
-
-## 🔄 **Future Enhancements**
-
-### **Planned Features**
-- [ ] **Message Reactions** - Emoji reactions to messages
-- [ ] **File Sharing** - Upload and share images/documents
-- [ ] **Private Messages** - Direct messaging between users
-- [ ] **Chat Rooms** - Multiple chat channels
-- [ ] **Voice Messages** - Audio message support
-- [ ] **Message Search** - Search through chat history
-- [ ] **Admin Panel** - User management and moderation
-
-### **Database Migration**
-When ready to scale beyond in-memory storage:
-- **PostgreSQL** with Entity Framework Core
-- **Message persistence** across server restarts
-- **User profiles** with avatars and preferences
-- **Advanced moderation** tools and user roles
-
-## 🤝 **Contributing**
-
-### **Development Setup**
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Follow the coding standards and security practices
-4. Write tests for new functionality
-5. Submit a pull request with detailed description
-
-### **Code Standards**
-- **C#**: Follow Microsoft coding conventions
-- **JavaScript**: Use ESLint configuration provided
-- **Security**: Never commit passwords or secrets
-- **Documentation**: Update README for new features
-
-## 📄 **License**
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 **Acknowledgments**
-
-- [ASP.NET Core SignalR](https://docs.microsoft.com/en-us/aspnet/core/signalr/) - Real-time communication
-- [React](https://reactjs.org/) - Frontend framework
-- [Railway](https://railway.app/) - Backend hosting
-- [Netlify](https://netlify.com/) - Frontend hosting
-- Security best practices from [OWASP](https://owasp.org/)
-
-## 📞 **Support**
-
-### **Getting Help**
-- 📖 **Documentation**: Read this README thoroughly
-- 🐛 **Bug Reports**: Create an issue with detailed reproduction steps
-- 💡 **Feature Requests**: Suggest improvements via GitHub issues
-- 💬 **Community**: Join our discussions for questions and tips
 
 ---
 
-**⭐ If this project helped you, please star the repository!**
+## 🔒 Security Architecture
 
-**🚀 Happy Chatting! Built with ❤️ for secure real-time communication.**
+### Authentication Flow
+
+```
+1. User submits Username + Password (or registers new account)
+2. Client sends request to AuthController (/api/auth) or SignalR Hub (AuthenticateAndJoin)
+3. RateLimitService evaluates IP attempt count (Blocks IP if > 10 failed attempts)
+4. AuthenticationService checks account lockout status (Locks account if > 5 failed logins)
+5. PasswordService evaluates strength rules (New users) or verifies SHA256 hash (Existing users)
+6. Upon success:
+   - Session token issued & set in HTTP-only cookie (chat_session)
+   - User state marked Online & active WebSocket connection registered
+   - Presence update & user list broadcasted to active clients
+```
+
+### Brute Force & Rate Limiting
+
+| Level | Threshold | Action / Lockout Duration | Responsible Service |
+| :--- | :--- | :--- | :--- |
+| **User Account** | 5 failed attempts | 15-minute account lockout | `AuthenticationService` |
+| **IP Address** | 10 failed attempts | 5-minute IP address block | `RateLimitService` |
+| **Message Length** | 1,000 chars (Hub) / 500 chars (REST) | Message truncation / rejection | `ChatHub` & `MessagesController` |
+
+### Password Security
+
+- **Min Length**: 6 characters
+- **Complexity**: Must contain letters and numbers
+- **Storage**: SHA256 hashing with custom salt derivation
+- **Privacy**: Passwords are never logged, exposed in APIs, or saved on client local storage.
+
+---
+
+## 📊 API Documentation
+
+### SignalR Hub Methods & Events
+
+**Hub Route:** `/chathub`
+
+#### Client Invokes (Methods)
+
+| Method | Parameters | Return Type | Description |
+| :--- | :--- | :--- | :--- |
+| `AuthenticateAndJoin` | `username` (string), `password` (string), `isNewUser` (bool) | `AuthResponse` | Authenticates account and registers SignalR connection |
+| `SendMessage` | `username` (string), `message` (string) | `Task` | Broadcasts a message to all connected clients in global chat |
+| `SendPrivateMessage` | `recipient` (string), `message` (string) | `Task` | Sends a private message (DM) directly to specified user |
+| `GetPrivateHistory` | `otherUser` (string) | `Task` | Fetches private conversation history with target user |
+| `LeaveChat` | `username` (string) | `Task` | Unregisters online status and notifies channel |
+
+#### Client Listens (Events)
+
+| Event Name | Payload | Description |
+| :--- | :--- | :--- |
+| `ReceiveMessage` | `ChatMessage` object | Triggered when a new global chat message is sent |
+| `ReceivePrivateMessage` | `ChatMessage` object | Triggered when a private DM is sent/received |
+| `UserJoined` | `username` (string) | System alert when a user connects |
+| `UserLeft` | `username` (string) | System alert when a user disconnects |
+| `UpdateUserList` | `List<User>` | Active online user list update |
+| `ChatHistory` | `List<ChatMessage>` | Initial payload of past global messages |
+| `PrivateHistory` | `List<ChatMessage>` | Initial payload of past private messages |
+| `Error` | `string` error message | Triggered on validation or authentication errors |
+
+---
+
+### REST API Endpoints
+
+#### Authentication & User State
+
+- `POST /api/auth`
+  - **Body:** `{ "username": "string", "password": "string", "isNewUser": false }`
+  - **Response:** 200 OK with session cookie, 429 Lockout, 401 Unauthorized, 409 Conflict.
+- `POST /api/logout`
+  - **Response:** Clears `chat_session` cookie and invalidates session token.
+- `GET /api/users`
+  - **Response:** Returns list of online users `[{ "username": "string", "displayColor": "string" }]`.
+- `POST /api/heartbeat`
+  - **Response:** Refreshes user active state to prevent offline pruning.
+
+#### Messages & DMs
+
+- `GET /api/messages?since={timestamp}`
+  - **Response:** Returns recent global messages (or messages since UNIX timestamp).
+- `POST /api/messages`
+  - **Body:** `{ "message": "string" }`
+  - **Response:** 201 Created with `ChatMessage` payload.
+- `GET /api/dm?with={username}&since={timestamp}`
+  - **Response:** Returns private message history with specified target user.
+- `POST /api/dm`
+  - **Body:** `{ "recipient": "string", "message": "string" }`
+  - **Response:** 201 Created with `ChatMessage` payload.
+
+---
+
+## 🤝 Contributing & License
+
+Contributions are welcome! Please follow these guidelines:
+
+1. Fork the repository.
+2. Create a topic branch (`git checkout -b feature/amazing-feature`).
+3. Commit your changes adhering to standard C# and JavaScript style guidelines.
+4. Push to your branch and submit a Pull Request.
+
+Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more details.
